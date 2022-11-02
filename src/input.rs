@@ -1,7 +1,13 @@
 use bevy::prelude::*;
 
-pub struct ClickEvent {
+pub enum EventType {
+    Press,
+    Release,
+}
+pub struct MouseEvent {
+    pub mouse_button: MouseButton,
     pub pos: Vec2,
+    pub event_type: EventType,
 }
 
 // pub fn handle_keyboard(keyboard: Res<Input<KeyCode>>, mut event_writer: EventWriter<ClickEvent>) {}
@@ -9,12 +15,37 @@ pub struct ClickEvent {
 pub fn handle_cursor(
     mouse_button: Res<Input<MouseButton>>,
     windows: Res<Windows>,
-    mut event_writer: EventWriter<ClickEvent>,
+    mut event_writer: EventWriter<MouseEvent>,
 ) {
-    if mouse_button.pressed(MouseButton::Left) {
+    if mouse_button.just_pressed(MouseButton::Left) {
         let window = windows.get_primary().expect("no primary window");
         if let Some(cursor_pos) = window.cursor_position() {
-            event_writer.send(ClickEvent { pos: cursor_pos })
+            if cursor_pos.x > 0.0
+                && cursor_pos.y > 0.0
+                && cursor_pos.x < window.width()
+                && cursor_pos.y < window.height()
+            {
+                event_writer.send(MouseEvent {
+                    pos: cursor_pos,
+                    mouse_button: MouseButton::Left,
+                    event_type: EventType::Press,
+                })
+            }
+        }
+    } else if mouse_button.just_released(MouseButton::Left) {
+        let window = windows.get_primary().expect("no primary window");
+        if let Some(cursor_pos) = window.cursor_position() {
+            if cursor_pos.x > 0.0
+                && cursor_pos.y > 0.0
+                && cursor_pos.x < window.width()
+                && cursor_pos.y < window.height()
+            {
+                event_writer.send(MouseEvent {
+                    pos: cursor_pos,
+                    mouse_button: MouseButton::Left,
+                    event_type: EventType::Release,
+                })
+            }
         }
     }
 }
@@ -22,6 +53,6 @@ pub fn handle_cursor(
 pub struct InputPlugin;
 impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<ClickEvent>().add_system(handle_cursor);
+        app.add_event::<MouseEvent>().add_system(handle_cursor);
     }
 }

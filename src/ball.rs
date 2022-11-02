@@ -1,27 +1,108 @@
-
 use bevy::prelude::*;
 
-use crate::input::ClickEvent;
+use crate::{
+    input::{EventType, MouseEvent},
+    r#move::{self, Position},
+    utils::random_color,
+};
 
-pub const RADIUS: f32 = 2.0;
+pub const RADIUS: f32 = 12.0;
+pub const DEVIDER: f32 = 2.0;
+
+use bevy_prototype_lyon::prelude as lyon;
 
 #[derive(Component)]
-pub struct Ball{
-    
-}
+pub struct Ball;
 
 pub fn add_ball(
-    mut event_reader: EventReader<ClickEvent>
-){
-    for click_event in event_reader.iter(){
-        // only spawn one. Im not sure it's neccessary
+    mut commands: Commands,
+    mut event_reader: EventReader<MouseEvent>,
+    mut ball_shooter: ResMut<BallShooter>,
+    windows: Res<Windows>,
+) {
+    let window = windows.get_primary().expect("no primary window");
+
+    for click_event in event_reader.iter() {
         println!("spawn at {}", click_event.pos);
+
+        if let EventType::Press = click_event.event_type {
+            ball_shooter.start_from(click_event.pos);
+        } else {
+            let velocity = match ball_shooter.shoot(click_event.pos) {
+                Some(v) => v,
+                None => break,
+            };
+
+            let shape = lyon::shapes::Circle {
+                center: -Vec2 {
+                    x: window.width() / 2.0,
+                    y: window.height() / 2.0,
+                },
+                radius: RADIUS,
+            };
+
+            commands
+                .spawn_bundle(lyon::GeometryBuilder::build_as(
+                    &shape,
+                    lyon::DrawMode::Fill(lyon::FillMode::color(random_color())),
+                    Transform {
+                        translation: click_event.pos.extend(0.0),
+                        ..Transform::default()
+                    },
+                ))
+                .insert(r#move::MoveItem {
+                    m: 0.1,
+                    v: velocity / DEVIDER,
+                    ..Default::default()
+                })
+                .insert(Position {
+                    pos: click_event.pos,
+                })
+                .insert(Ball)
+                .insert(crate::collide::Collider)
+                .insert(crate::exclude::Exclusion);
+        }
+
+        // only spawn one. Im not sure it's neccessary
+        break;
+    }
+}
+
+pub fn draw_ball(mut balls: Query<(&mut Transform, &Position), With<Ball>>) {
+    for (mut ball, ball_pos) in &mut balls {
+        *ball = ball.with_translation(ball_pos.extend(0.0));
+    }
+}
+
+pub struct BallShooter {
+    pub start_pos: Option<Vec2>,
+}
+
+impl BallShooter {
+    pub fn start_from(&mut self, start_pos: Vec2) {
+        self.start_pos = Some(start_pos)
+    }
+
+    pub fn shoot(&mut self, end_pos: Vec2) -> Option<Vec2> {
+        self.start_pos.take().map(|start_pos| end_pos - start_pos)
+    }
+
+    #[inline]
+    pub fn is_none(&self) -> bool {
+        self.start_pos.is_none()
+    }
+
+    #[inline]
+    pub fn is_some(&self) -> bool {
+        !self.is_none()
     }
 }
 
 pub struct BallPlugin;
-impl Plugin for BallPlugin{
+impl Plugin for BallPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(add_ball);
+        app.insert_resource(BallShooter { start_pos: None })
+            .add_system(add_ball)
+            .add_system(draw_ball);
     }
 }

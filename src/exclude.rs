@@ -1,12 +1,12 @@
 use crate::r#move::force;
-use crate::{
-    r#move::{MoveItem, Moveable, Position},
-    utils::DistanceSquare,
-};
+use crate::r#move::{MoveItem, Position};
 use bevy::prelude::*;
 
+#[derive(Component)]
+pub struct Exclusion;
+
 /// mutually exclude
-pub fn exclude_force(mut items: Query<(&Position, &mut MoveItem), With<Moveable>>) {
+pub fn exclude_force(mut items: Query<(&Position, &mut MoveItem), With<Exclusion>>) {
     const EXCLUSIVE_FORCE: f32 = 1.0;
     const MAX_EXCLUSIVE_FORCE: f32 = 50.0;
 
@@ -16,20 +16,44 @@ pub fn exclude_force(mut items: Query<(&Position, &mut MoveItem), With<Moveable>
             let pos_a = pos_vec[i];
             let pos_b = pos_vec[j];
 
-            let distance_square = pos_a.distance_square(&pos_b);
+            let m_a = item_vec[i].m;
+            let m_b = item_vec[j].m;
+
+            let distance_square = pos_a.distance_squared(pos_b.pos);
 
             // recompute force
             if distance_square != 0.0 {
                 item_vec[i].f += (pos_a.pos - pos_b.pos)
-                    * MAX_EXCLUSIVE_FORCE.min(EXCLUSIVE_FORCE / distance_square);
+                    * MAX_EXCLUSIVE_FORCE.min(EXCLUSIVE_FORCE / distance_square)
+                    * m_a;
                 item_vec[j].f += (pos_b.pos - pos_a.pos)
-                    * MAX_EXCLUSIVE_FORCE.min(EXCLUSIVE_FORCE / distance_square);
+                    * MAX_EXCLUSIVE_FORCE.min(EXCLUSIVE_FORCE / distance_square)
+                    * m_b;
             }
         }
     }
 }
 
-pub fn exclude_border() {}
+pub fn exclude_border(
+    windows: Res<Windows>,
+    mut items: Query<(&Position, &mut MoveItem), With<Exclusion>>,
+) {
+    const DIVIDER: f32 = 50000.0;
+    let window = windows.get_primary().expect("no primary window");
+    let top = window.height();
+    let right = window.width();
+
+    let top_mid = top / 2.0;
+    let right_mid = right / 2.0;
+
+    for (pos, mut item) in &mut items {
+        let v_x = (right_mid - pos.x) / DIVIDER;
+        let v_y = (top_mid - pos.y) / DIVIDER;
+
+        // multiply the value remaining direction
+        item.f += Vec2::new(v_x, v_y);
+    }
+}
 
 pub struct ExcludePlugin;
 impl Plugin for ExcludePlugin {
