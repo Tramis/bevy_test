@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 
 use bevy::prelude::*;
 
@@ -11,6 +11,12 @@ impl Deref for Position {
     type Target = Vec2;
     fn deref(&self) -> &Self::Target {
         &self.pos
+    }
+}
+
+impl DerefMut for Position {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.pos
     }
 }
 

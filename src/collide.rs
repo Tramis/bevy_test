@@ -41,7 +41,7 @@ pub struct Collider;
 
 pub fn collide_with_wall(
     windows: Res<Windows>,
-    mut collider: Query<(&Position, &mut MoveItem), With<Collider>>,
+    mut collider: Query<(&mut Position, &mut MoveItem), With<Collider>>,
 ) {
     const PADDING: f32 = 10.0;
 
@@ -49,18 +49,45 @@ pub fn collide_with_wall(
     let top = window.height();
     let right = window.width();
 
-    for (pos, mut item) in &mut collider {
+    for (mut pos, mut item) in &mut collider {
         let old_velocity = item.v;
-        if pos.x <= 0.0 + PADDING {
-            item.v.x = (1.0_f32).max(-old_velocity.x);
-        } else if pos.x >= right - PADDING {
-            item.v.x = (-1.0_f32).min(-old_velocity.x);
+        // ========= add minimum velocity
+        // if pos.x <= 0.0 + PADDING {
+        //     item.v.x = (1.0_f32).max(-old_velocity.x);
+        // } else if pos.x >= right - PADDING {
+        //     item.v.x = (-1.0_f32).min(-old_velocity.x);
+        // }
+
+        // if pos.y <= 0.0 + PADDING {
+        //     item.v.y = (1.0_f32).max(-old_velocity.y)
+        // } else if pos.y >= top - PADDING {
+        //     item.v.y = (-1.0_f32).min(-old_velocity.y)
+        // }
+
+        // =========== without minimun velocity
+        // if pos.x <= 0.0 + PADDING ||  pos.x >= right - PADDING{
+        //     item.v.x = -old_velocity.x
+        // }
+
+        // if pos.y <= 0.0 + PADDING || pos.y >= top - PADDING{
+        //     item.v.y = -old_velocity.y
+        // }
+
+        // =========== update position
+        if pos.x < 0.0 + PADDING {
+            pos.x = 0.0 + PADDING;
+            item.v.x = old_velocity.x.abs()
+        } else if pos.x > right - PADDING {
+            pos.x = right - PADDING;
+            item.v.x = -(old_velocity.x.abs())
         }
 
         if pos.y <= 0.0 + PADDING {
-            item.v.y = (1.0_f32).max(-old_velocity.y)
+            pos.y = 0.0 + PADDING;
+            item.v.y = old_velocity.y.abs();
         } else if pos.y >= top - PADDING {
-            item.v.y = (-1.0_f32).min(-old_velocity.y)
+            pos.y = top - PADDING;
+            item.v.y = -(old_velocity.y.abs())
         }
     }
 }

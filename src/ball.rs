@@ -21,6 +21,7 @@ pub fn add_ball(
     windows: Res<Windows>,
 ) {
     let window = windows.get_primary().expect("no primary window");
+    let v_center = Vec2::new(window.width() / 2.0, window.height() / 2.0);
 
     for click_event in event_reader.iter() {
         println!("spawn at {}", click_event.pos);
@@ -34,10 +35,7 @@ pub fn add_ball(
             };
 
             let shape = lyon::shapes::Circle {
-                center: -Vec2 {
-                    x: window.width() / 2.0,
-                    y: window.height() / 2.0,
-                },
+                center: default(),
                 radius: RADIUS,
             };
 
@@ -46,7 +44,7 @@ pub fn add_ball(
                     &shape,
                     lyon::DrawMode::Fill(lyon::FillMode::color(random_color())),
                     Transform {
-                        translation: click_event.pos.extend(0.0),
+                        translation: (window.cursor_position().unwrap() - v_center).extend(0.0),
                         ..Transform::default()
                     },
                 ))
@@ -68,9 +66,11 @@ pub fn add_ball(
     }
 }
 
-pub fn draw_ball(mut balls: Query<(&mut Transform, &Position), With<Ball>>) {
+pub fn move_ball(mut balls: Query<(&mut Transform, &Position), With<Ball>>, windows: Res<Windows>) {
+    let window = windows.get_primary().expect("no primary window");
+    let v_center = Vec2::new(window.width() / 2.0, window.height() / 2.0);
     for (mut ball, ball_pos) in &mut balls {
-        *ball = ball.with_translation(ball_pos.extend(0.0));
+        *ball = ball.with_translation((ball_pos.pos - v_center).extend(0.0));
     }
 }
 
@@ -103,6 +103,6 @@ impl Plugin for BallPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(BallShooter { start_pos: None })
             .add_system(add_ball)
-            .add_system(draw_ball);
+            .add_system(move_ball);
     }
 }
