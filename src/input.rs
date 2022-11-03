@@ -47,7 +47,7 @@ pub fn handle_cursor(
                 })
             }
         }
-    } else if mouse_button.just_pressed(MouseButton::Right){
+    } else if mouse_button.just_pressed(MouseButton::Right) {
         let window = windows.get_primary().expect("no primary window");
         if let Some(cursor_pos) = window.cursor_position() {
             println!("right click: {}", cursor_pos)

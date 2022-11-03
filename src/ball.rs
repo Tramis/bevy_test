@@ -86,16 +86,6 @@ impl BallShooter {
     pub fn shoot(&mut self, end_pos: Vec2) -> Option<Vec2> {
         self.start_pos.take().map(|start_pos| end_pos - start_pos)
     }
-
-    #[inline]
-    pub fn is_none(&self) -> bool {
-        self.start_pos.is_none()
-    }
-
-    #[inline]
-    pub fn is_some(&self) -> bool {
-        !self.is_none()
-    }
 }
 
 pub struct BallPlugin;

@@ -33,8 +33,8 @@ pub fn random_color() -> Color {
     use rand::Rng;
     let mut rng = rand::thread_rng();
     Color::rgb_u8(
-        rng.gen_range(0..180),
-        rng.gen_range(0..180),
-        rng.gen_range(0..180),
+        rng.gen_range(0..230),
+        rng.gen_range(0..230),
+        rng.gen_range(0..230),
     )
 }

@@ -41,7 +41,7 @@ pub struct Collider;
 
 pub fn collide_with_wall(
     windows: Res<Windows>,
-    mut collider: Query<(&mut Position, &mut MoveItem), With<Collider>>,
+    mut colliders: Query<(&mut Position, &mut MoveItem), With<Collider>>,
 ) {
     const PADDING: f32 = 10.0;
 
@@ -49,7 +49,7 @@ pub fn collide_with_wall(
     let top = window.height();
     let right = window.width();
 
-    for (mut pos, mut item) in &mut collider {
+    for (mut pos, mut item) in &mut colliders {
         let old_velocity = item.v;
         // ========= add minimum velocity
         // if pos.x <= 0.0 + PADDING {

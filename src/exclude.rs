@@ -34,6 +34,7 @@ pub fn exclude_force(mut items: Query<(&Position, &mut MoveItem), With<Exclusion
     }
 }
 
+/// exclude with border, but behave kind of weirdly
 pub fn exclude_border(
     windows: Res<Windows>,
     mut items: Query<(&Position, &mut MoveItem), With<Exclusion>>,
